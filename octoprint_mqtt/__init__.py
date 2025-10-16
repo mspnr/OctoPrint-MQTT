@@ -516,33 +516,39 @@ class MqttPlugin(octoprint.plugin.SettingsPlugin,
             return
 
         self._logger.info("Connected to mqtt broker")
-        lw_active = self._settings.get_boolean(["publish", "lwActive"])
-        lw_topic = self._get_topic("lw")
-        lw_retain = self._settings.get_boolean(["broker", "lwRetain"])
-        if lw_active and lw_topic:
-            self._mqtt.publish(lw_topic, self.LWT_CONNECTED, qos=1, retain=lw_retain)
 
-        _retain = self._settings.get_boolean(["broker", "retain"])
-        if self._mqtt_publish_queue:
-            try:
-                while True:
-                    topic, payload, qos = self._mqtt_publish_queue.popleft()
-                    self._mqtt.publish(topic, payload=payload, retain=_retain, qos=qos)
-            except IndexError:
-                # that's ok, queue is just empty
-                pass
+        try:
+            lw_active = self._settings.get_boolean(["publish", "lwActive"])
+            lw_topic = self._get_topic("lw")
+            lw_retain = self._settings.get_boolean(["broker", "lwRetain"])
+            if lw_active and lw_topic:
+                self._mqtt.publish(lw_topic, self.LWT_CONNECTED, qos=1, retain=lw_retain)
 
-        subbed_topics = list(map(lambda t: (t, 0), {topic for topic, _, _, _ in self._mqtt_subscriptions}))
-        if subbed_topics:
-            self._mqtt.subscribe(subbed_topics)
-            self._logger.debug("Subscribed to topics")
+            _retain = self._settings.get_boolean(["broker", "retain"])
+            if self._mqtt_publish_queue:
+                try:
+                    while True:
+                        topic, payload, qos = self._mqtt_publish_queue.popleft()
+                        self._mqtt.publish(topic, payload=payload, retain=_retain, qos=qos)
+                except IndexError:
+                    # that's ok, queue is just empty
+                    pass
 
-        self._mqtt_connected = True
+            # Filter out invalid topics (None, empty string)
+            valid_topics = {topic for topic, _, _, _ in self._mqtt_subscriptions if topic}
+            subbed_topics = list(map(lambda t: (t, 0), valid_topics))
+            if subbed_topics:
+                self._mqtt.subscribe(subbed_topics)
+                self._logger.debug("Subscribed to topics")
 
-        if self._mqtt_reset_state:
-            self._update_progress("", "")
-            self.on_slicing_progress("", "", "", "", "", 0)
-            self._mqtt_reset_state = False
+            self._mqtt_connected = True
+
+            if self._mqtt_reset_state:
+                self._update_progress("", "")
+                self.on_slicing_progress("", "", "", "", "", 0)
+                self._mqtt_reset_state = False
+        except Exception as e:
+            self._logger.error("Exception in _on_mqtt_connect: {}".format(e), exc_info=True)
 
     def _on_mqtt_disconnect(self, client, userdata, rc):
         if not client == self._mqtt:
