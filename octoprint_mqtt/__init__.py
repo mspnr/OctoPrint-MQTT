@@ -417,6 +417,12 @@ class MqttPlugin(octoprint.plugin.SettingsPlugin,
                 _retain = self._settings.get_boolean(["broker", "lwRetain"])
                 self._mqtt.publish(lwt, self.LWT_DISCONNECTED, qos=1, retain=_retain)
 
+        # Actually disconnect from the broker
+        try:
+            self._mqtt.disconnect()
+        except:
+            pass  # Ignore errors if already disconnected
+
         self._mqtt.loop_stop()
 
         if force:
