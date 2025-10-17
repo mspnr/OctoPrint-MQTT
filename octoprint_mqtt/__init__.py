@@ -387,16 +387,12 @@ class MqttPlugin(octoprint.plugin.SettingsPlugin,
         # Verify actual connection status with the MQTT client
         actual_connected = False
         if self._mqtt is not None:
-            try:
-                actual_connected = self._mqtt.is_connected()
-                # Sync our flag with actual status
-                if actual_connected != self._mqtt_connected:
-                    self._logger.debug("Connection status out of sync, updating from {} to {}".format(
-                        self._mqtt_connected, actual_connected))
-                    self._mqtt_connected = actual_connected
-            except:
-                # is_connected() might not be available in older paho versions
-                actual_connected = self._mqtt_connected
+            actual_connected = self._mqtt.is_connected()
+            # Sync our flag with actual status
+            if actual_connected != self._mqtt_connected:
+                self._logger.debug("Connection status out of sync, updating from {} to {}".format(
+                    self._mqtt_connected, actual_connected))
+                self._mqtt_connected = actual_connected
 
         return flask.jsonify(dict(connected=actual_connected))
 
@@ -461,18 +457,17 @@ class MqttPlugin(octoprint.plugin.SettingsPlugin,
         if self._mqtt is None:
             return
 
-        if incl_lwt:
+        # Publish Last Will Testament if requested and connected
+        if incl_lwt and self._mqtt.is_connected():
             if lwt is None:
                 lwt = self._get_topic("lw")
             if lwt:
                 _retain = self._settings.get_boolean(["broker", "lwRetain"])
                 self._mqtt.publish(lwt, self.LWT_DISCONNECTED, qos=1, retain=_retain)
 
-        # Actually disconnect from the broker
-        try:
+        # Actually disconnect from the broker if connected
+        if self._mqtt.is_connected():
             self._mqtt.disconnect()
-        except:
-            pass  # Ignore errors if already disconnected
 
         self._mqtt.loop_stop()
 
