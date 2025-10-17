@@ -10,16 +10,9 @@
             <div class="control-group">
                 <label class="control-label">{{ _('Connection Status') }}</label>
                 <div class="controls">
-                    <span id="mqtt_connection_status" style="display: inline-flex; align-items: center; gap: 5px;">
-                        <i class="fa fa-spinner fa-spin"></i>
-                        <span>{{ _('Checking...') }}</span>
-                    </span>
-                    <button class="btn btn-danger btn-small" id="mqtt_disconnect_button" data-bind="click: disconnectMqtt" style="margin-left: 10px;">
-                        <i class="fa fa-unlink"></i> {{ _('Disconnect') }}
-                    </button>
-                    <button class="btn btn-success btn-small" id="mqtt_connect_button" data-bind="click: connectMqtt">
-                        <i class="fa fa-link"></i> {{ _('Connect') }}
-                    </button>
+                    <span style="display: inline-flex; align-items: center; gap: 5px;" data-bind="html: connectionStatusHtml"></span>
+                    <button class="btn btn-danger btn-small" data-bind="click: disconnectMqtt, enable: disconnectButtonEnabled, html: disconnectButtonHtml" style="margin-left: 10px;"></button>
+                    <button class="btn btn-success btn-small" data-bind="click: connectMqtt, enable: connectButtonEnabled, html: connectButtonHtml"></button>
                 </div>
             </div>
             <div class="control-group">

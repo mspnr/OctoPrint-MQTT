@@ -10,6 +10,44 @@ $(function() {
         self.settings = undefined;
         self.availableProtocols = ko.observableArray(['MQTTv31','MQTTv311']);
 
+        // Connection state observables
+        self.isConnected = ko.observable(false);
+        self.isConnecting = ko.observable(false);
+        self.isDisconnecting = ko.observable(false);
+
+        // Computed observables for UI elements
+        self.connectionStatusHtml = ko.pureComputed(function() {
+            if (self.isConnected()) {
+                return '<i class="fa fa-check-circle" style="color: green;"></i> <span style="color: green;">Connected</span>';
+            } else {
+                return '<i class="fa fa-times-circle" style="color: #d9534f;"></i> <span style="color: #d9534f;">Disconnected</span>';
+            }
+        });
+
+        self.connectButtonEnabled = ko.pureComputed(function() {
+            return !self.isConnecting() && !self.isDisconnecting();
+        });
+
+        self.connectButtonHtml = ko.pureComputed(function() {
+            if (self.isConnecting()) {
+                return '<i class="fa fa-spinner fa-spin"></i> Connecting...';
+            } else {
+                return '<i class="fa fa-link"></i> Connect';
+            }
+        });
+
+        self.disconnectButtonEnabled = ko.pureComputed(function() {
+            return !self.isConnecting() && !self.isDisconnecting();
+        });
+
+        self.disconnectButtonHtml = ko.pureComputed(function() {
+            if (self.isDisconnecting()) {
+                return '<i class="fa fa-spinner fa-spin"></i> Disconnecting...';
+            } else {
+                return '<i class="fa fa-unlink"></i> Disconnect';
+            }
+        });
+
         self.onBeforeBinding = function () {
             self.settings = self.global_settings.settings.plugins.mqtt;
 
@@ -38,18 +76,11 @@ $(function() {
         };
 
         self.updateConnectionStatus = function(connected) {
-            var statusElement = $("#mqtt_connection_status");
-            if (connected) {
-                statusElement.html('<i class="fa fa-check-circle" style="color: green;"></i> <span style="color: green;">Connected</span>');
-            } else {
-                statusElement.html('<i class="fa fa-times-circle" style="color: #d9534f;"></i> <span style="color: #d9534f;">Disconnected</span>');
-            }
+            self.isConnected(connected);
         };
 
         self.connectMqtt = function() {
-            var button = $("#mqtt_connect_button");
-            button.prop("disabled", true);
-            button.html('<i class="fa fa-spinner fa-spin"></i> Connecting...');
+            self.isConnecting(true);
 
             $.ajax({
                 url: API_BASEURL + "plugin/mqtt",
@@ -85,16 +116,13 @@ $(function() {
                     self.updateConnectionStatus(false);
                 },
                 complete: function() {
-                    button.prop("disabled", false);
-                    button.html('<i class="fa fa-link"></i> Connect');
+                    self.isConnecting(false);
                 }
             });
         };
 
         self.disconnectMqtt = function() {
-            var button = $("#mqtt_disconnect_button");
-            button.prop("disabled", true);
-            button.html('<i class="fa fa-spinner fa-spin"></i> Disconnecting...');
+            self.isDisconnecting(true);
 
             $.ajax({
                 url: API_BASEURL + "plugin/mqtt",
@@ -129,8 +157,7 @@ $(function() {
                     });
                 },
                 complete: function() {
-                    button.prop("disabled", false);
-                    button.html('<i class="fa fa-unlink"></i> Disconnect');
+                    self.isDisconnecting(false);
                 }
             });
         };
