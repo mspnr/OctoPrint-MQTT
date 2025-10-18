@@ -25,7 +25,7 @@ $(function() {
         });
 
         self.connectButtonEnabled = ko.pureComputed(function() {
-            return !self.isConnecting() && !self.isDisconnecting();
+            return !self.isConnecting() && !self.isDisconnecting() && !self.isConnected();
         });
 
         self.connectButtonHtml = ko.pureComputed(function() {
@@ -37,7 +37,7 @@ $(function() {
         });
 
         self.disconnectButtonEnabled = ko.pureComputed(function() {
-            return !self.isConnecting() && !self.isDisconnecting();
+            return !self.isConnecting() && !self.isDisconnecting() && self.isConnected();
         });
 
         self.disconnectButtonHtml = ko.pureComputed(function() {
