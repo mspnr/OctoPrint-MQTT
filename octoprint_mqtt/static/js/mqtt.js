@@ -161,6 +161,17 @@ $(function() {
                 }
             });
         };
+
+        // Handle plugin messages from backend for real-time connection status updates
+        self.onDataUpdaterPluginMessage = function(plugin, data) {
+            if (plugin !== "mqtt") {
+                return;
+            }
+
+            if (data.hasOwnProperty("connected")) {
+                self.updateConnectionStatus(data.connected);
+            }
+        };
     }
 
     ADDITIONAL_VIEWMODELS.push([

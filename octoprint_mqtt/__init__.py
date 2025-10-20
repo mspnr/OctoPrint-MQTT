@@ -589,6 +589,9 @@ class MqttPlugin(octoprint.plugin.SettingsPlugin,
 
             self._mqtt_connected = True
 
+            # Notify frontend of connection status change
+            self._plugin_manager.send_plugin_message(self._identifier, {"connected": True})
+
             if self._mqtt_reset_state:
                 self._update_progress("", "")
                 self.on_slicing_progress("", "", "", "", "", 0)
@@ -606,6 +609,12 @@ class MqttPlugin(octoprint.plugin.SettingsPlugin,
             self._logger.info("Disconnected from mqtt broker")
 
         self._mqtt_connected = False
+
+        # Notify frontend of connection status change
+        try:
+            self._plugin_manager.send_plugin_message(self._identifier, {"connected": False})
+        except Exception as e:
+            self._logger.error("Exception while sending disconnect message to frontend: {}".format(e), exc_info=True)
 
     def _on_mqtt_message(self, client, userdata, msg):
         if not client == self._mqtt:
